@@ -61,7 +61,5 @@ function directiveParser(str) {
 
 
 module.exports = {
-  directives,
-  shortMap,
   directiveParser,
 };

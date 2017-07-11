@@ -5,7 +5,7 @@ A util help to output a log that can be updated, support styles such as table, p
 
 ## Install
 ```
-npm install termialog --save-dev
+npm install conshow --save-dev
 ```
 
 ## Quick Start
