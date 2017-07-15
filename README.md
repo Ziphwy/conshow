@@ -27,12 +27,15 @@ conshow.out('test');
 ```
 <div style="background: #333;color:#eee">test<span style="background: #eee;color: #eee">1</span></div>
 
+***
 #### outln(String, id)
 print a string to stdout without '\n'.
 ```js
 conshow.outln('test');
 ```
 <div style="background: #333;color:#eee;padding:0.3em;">test<br><span style="background: #eee;color: #eee">1</span></div>
+
+***
 ### Directives
 
 #### @underline() / @u()

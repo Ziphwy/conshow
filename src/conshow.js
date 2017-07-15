@@ -3,87 +3,72 @@ const crypto = require('crypto');
 const parser = require('./parser');
 
 const SIGN = {
-  LOAD: '░',
-  COMPLETE: '▓',
   SPACE: ' ',
   CORNER: '+',
   ROW: '-',
   COL: '|',
-  // NODE: "├",
   NODE: '└',
   DASH: '─',
-  COLORS: [
-    'black',
-    'red',
-    'green',
-    'yellow',
-    'blue',
-    'purple',
-    'darkGreen',
-    'white',
-  ],
 };
 
 /**
  * @constructor
  */
 function Conshow() {
-  this.terminalCache = {};
+  this.cache = {};
   this.indexes = [];
+  this.id = 0;
   this.isRefreshTask = false;
   this.newLog();
 }
 
+
 /**
- * turn next page
+ * turn to next page
  */
 Conshow.prototype.newLog = function () {
-  // process.stdout.write('\x1b[s');
   const blank = '\n\n'.repeat(process.stdout.rows);
   process.stdout.write(blank);
 };
 
-/**
- * clear the console without clearing the cache
- */
-Conshow.prototype.clear = function () {
-  readline.cursorTo(process.stdout, 0, 0);
-  readline.clearScreenDown(process.stdout);
-};
 
 /**
  * clear the console and clear the cache
  */
-Conshow.prototype.reset = function () {
+Conshow.prototype.clear = function () {
+  this.cache = {};
+  this.indexes = [];
   readline.cursorTo(process.stdout, 0, 0);
   readline.clearScreenDown(process.stdout);
 };
+
 
 /**
  * refresh the cache to console
  */
 Conshow.prototype.refresh = function () {
-  this.clear();
-  const _terminalCache = this.terminalCache;
+  readline.cursorTo(process.stdout, 0, 0);
+  readline.clearScreenDown(process.stdout);
+  const _cache = this.cache;
   this.indexes.forEach((id) => {
-    process.stdout.write(_terminalCache[id]);
+    process.stdout.write(_cache[id]);
   });
 };
 
+
 /**
- * output the 
- * 
+ * output the msg without enter('\n')
+ *
  * @param {String} msg
  * @param {String} id
+ * @return {Conshow}
  */
-Conshow.prototype.out = function (msg, id) {
+Conshow.prototype.out = function (msg, option = {}) {
   const self = this;
-  if (!id) {
-    id = crypto.createHash('md5').update(Math.random().toString()).digest('hex');
-  }
-  if (!self.terminalCache[id]) {
+  const { id = crypto.createHash('md5').update(Math.random().toString()).digest('hex') } = option;
+  if (!self.cache[id]) {
     this.indexes.push(id);
-    Object.defineProperty(self.terminalCache, id, {
+    Object.defineProperty(self.cache, id, {
       set(value) {
         this[`_${id}`] = value;
         if (!self.refreshTask) {
@@ -97,12 +82,17 @@ Conshow.prototype.out = function (msg, id) {
       },
     });
   }
-  self.terminalCache[id] = `\x1b[0m${parser.directiveParser(msg)}`;
+  self.id = id;
+  self.cache[id] = `\x1b[0m${parser.directiveParser(msg, option)}`;
+  return this;
 };
+
 
 /**
  * @description help delete the log
  * @param {String|Array} ids
+ *
+ * @api public
  */
 Conshow.prototype.delete = function (ids) {
   if (!/Array/.test(Object.prototype.toString(ids))) {
@@ -110,48 +100,34 @@ Conshow.prototype.delete = function (ids) {
   }
   let index;
   ids.forEach((id) => {
-    delete this.terminalCache[id];
+    delete this.cache[id];
     index = this.indexes.indexOf(id);
     this.indexes.splice(index, 1);
   });
   this.refresh();
+  return this;
 };
+
 
 /**
  * @description help output a line with '\n'
  * @param {String} msg
  * @param {String} id
  */
-Conshow.prototype.outln = function (msg, id) {
-  this.out(`${msg}\n`, id);
+Conshow.prototype.log = function (msg, option) {
+  return this.out(`${msg}\n`, option);
 };
 
-Conshow.prototype.tag = function (tagName, msg, color, id) {
-  this.out(`\x1b[7m${tagName}\t${msg}`, id);
-};
 
 /**
- * @description help create a progress, default styles: ▓▓▓▓▓▓▓▓▓▓░░░░░░░░░░░
- * @param {Number} percent
- * @param {String} id
- */
-Conshow.prototype.progress = function (percent, id) {
-  if (percent > 100 || percent < 0) {
-    return;
-  }
-  const total = 40;
-  const complete = Math.ceil((percent / 100) * total);
-  const msg = `${SIGN.COMPLETE.repeat(complete)}${SIGN.LOAD.repeat(total - complete)}`;
-  this.out(msg, id);
-  return this;
-};
-
-/**
- * @description help create a table
+ * help create a table
+ *
  * @param {Array} table
  * @param {String} id
+ *
+ * @return {Conshow}
  */
-Conshow.prototype.table = function (table, id) {
+Conshow.prototype.table = function (table, option) {
   let outline = SIGN.CORNER;
 
   for (let i = 0, ilen = table[0].length; i < ilen; i++) {
@@ -178,11 +154,19 @@ Conshow.prototype.table = function (table, id) {
 
   msg = `\n${outline}\n${msg}${outline}\n`;
 
-  this.out(msg, id);
+  this.out(msg, option);
   return this;
 };
 
-Conshow.prototype.tree = function (tree, id) {
+
+/**
+ * help create a json tree
+ *
+ * @param {any} tree the jsonObj
+ * @param {any} id
+ * @return {Conshow}
+ */
+Conshow.prototype.tree = function (jsonObj, option) {
   const msg = (function parseObject(tree, deep) {
     return Object.keys(tree).reduce((last, key) => {
       if (typeof tree[key] === 'object') {
@@ -190,9 +174,9 @@ Conshow.prototype.tree = function (tree, id) {
       }
       return `${last}${' '.repeat(deep * 5)}${SIGN.NODE}${SIGN.DASH.repeat(3)} ${key}: ${tree[key]}\n`;
     }, '');
-  }(tree, 0));
-  this.out(msg, id);
-  return this;
+  }(jsonObj, 0));
+  return this.out(msg, option);
 };
+
 
 module.exports = Conshow;

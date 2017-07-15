@@ -12,54 +12,39 @@ const shortMap = {
   h: 'hide',
 };
 
-const colors = [
-  { short: 'b', long: 'black' },
-  { short: 'r', long: 'red' },
-  { short: 'g', long: 'green' },
-  { short: 'y', long: 'yellow' },
-  { short: 'bl', long: 'blue' },
-  { short: 'p', long: 'purple' },
-  { short: 'dg', long: 'darkgreen' },
-];
-
-function initColor() {
-  colors.forEach((colorObj, index) => {
-    directives[`f_${colorObj.long}`] = `\x1b[3${index}m`;
-    directives[`b_${colorObj.long}`] = `\x1b[4${index}m`;
-    shortMap[`f_${colorObj.short}`] = `f_${colorObj.long}`;
-    shortMap[`b_${colorObj.short}`] = `b_${colorObj.long}`;
-  });
-}
-
-initColor();
-
 // directive regexp
 const expressReg = /(?:@[\w-]+)+\((?:.|\n)*?\)/g;
 const parseReg = /((?:@[\w-]+)+)\(((?:.|\n)*?)\)/;
 const directiveReg = /@([\w-]+)/g;
 
+function addDirective(key, callback, short) {
+  if (!key || !callback) throw new Error('[conshow] directive or callback is undefined.');
+  directives[key] = callback;
+  if (short) shortMap[short] = key;
+}
 
-function getDirective(directiveStr) {
-  return directiveStr.replace(directiveReg, ($0, name) => {
+function directiveParser(str, option) {
+  return str.replace(expressReg, express =>
+    express.replace(parseReg, ($0, directiveStr, content) =>
+      `${getDirective(directiveStr, content, option)}${directives.clear}`));
+}
+
+function getDirective(directiveStr, content, option) {
+  let _content = content;
+  const modify = directiveStr.replace(directiveReg, ($0, name) => {
     const directive = directives[shortMap[name]] || directives[name];
     if (!directive) {
       throw Error(`[conshow] the directive "@${name}" is not undefined.`);
     }
     if (typeof directive === 'function') {
-      return directive();
+      _content = directive(_content, option);
+      return '';
     }
     return directive;
   });
+  return modify + _content;
 }
 
 
-function directiveParser(str) {
-  return str.replace(expressReg, express =>
-    express.replace(parseReg, ($0, directiveStr, content) =>
-      `${getDirective(directiveStr)}${content}${directives.clear}`));
-}
-
-
-module.exports = {
-  directiveParser,
-};
+module.exports.directiveParser = directiveParser;
+module.exports.addDirective = addDirective;
