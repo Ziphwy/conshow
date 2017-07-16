@@ -29,7 +29,15 @@ describe('conshow', () => {
   });
 
   it('test a table', () => {
+    conshow.table({ x: 1, y: 2 });
+  });
+
+  it('test a table', () => {
     conshow.table([['name', 'sex', 'age'], ['Ben', 'male432423', '23'], ['Mary', 'female', '21']]);
+  });
+
+  it('test a tree', () => {
+    conshow.tree([['name', 'sex', 'age'], ['Ben', 'male432423', '23'], ['Mary', 'female', '21']]);
   });
 });
 

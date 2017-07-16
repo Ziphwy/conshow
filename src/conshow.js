@@ -1,6 +1,7 @@
 const readline = require('readline');
 const crypto = require('crypto');
 const parser = require('./parser');
+const { fill } = require('./utitls');
 
 const SIGN = {
   SPACE: ' ',
@@ -127,37 +128,24 @@ Conshow.prototype.log = function (msg, option) {
  *
  * @return {Conshow}
  */
-Conshow.prototype.table = function (table, option) {
-  let outline = SIGN.CORNER;
+Conshow.prototype.table = function (obj, option = {}) {
+  const { colLen = 24 } = option;
+  const format = str => fill(str, colLen, ' ');
 
-  for (let i = 0, ilen = table[0].length; i < ilen; i++) {
-    let maxLen = 6;
+  const unionObj = Object.keys(obj).reduce((last, rowKey) =>
+    Object.assign({}, last, obj[rowKey]), {});
 
-    for (let j = 0, jlen = table.length; j < jlen; j++) {
-      maxLen = Math.max(maxLen, JSON.stringify(table[j][i]).length);
-    }
+  const outline = `+${`${fill('', colLen, '-')}+`.repeat(Object.keys(unionObj).length + 1)}\n`;
 
-    for (let j = 0, jlen = table.length; j < jlen; j++) {
-      const col = JSON.stringify(table[j][i]);
-      const colLen = col.replace(/(?:@+[\w-]+)+\(((?:.|\n)*?)\)/g, '$1').length;
-      if (colLen === maxLen) {
-        table[j][i] = ` ${col} ${SIGN.COL}`;
-      } else {
-        table[j][i] = ` ${col}${' '.repeat((maxLen - colLen) + 1)}${SIGN.COL}`;
-      }
-    }
+  const title = `|${format('(index)')}|${Object.keys(unionObj).reduce((last, key) => `${last}${format(key)}|`, '')}\n`;
 
-    outline += `${SIGN.ROW.repeat(maxLen + 2)}${SIGN.CORNER}`;
-  }
+  const content = Object.keys(obj).reduce((lastRow, rowKey) => {
+    const cols = Object.keys(unionObj).reduce((lastCol, colKey) => `${lastCol}${format(obj[rowKey][colKey])}|`, '');
+    return `${lastRow}|${format(rowKey)}|${cols}\n`;
+  }, '');
 
-  let msg = table.reduce((last, row) => `${last}|${row.join('')}\n`, '');
-
-  msg = `\n${outline}\n${msg}${outline}\n`;
-
-  this.out(msg, option);
-  return this;
+  this.out(`${outline}${title}${outline}${content}${outline}`, option);
 };
-
 
 /**
  * help create a json tree

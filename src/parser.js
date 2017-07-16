@@ -45,6 +45,10 @@ function getDirective(directiveStr, content, option) {
   return modify + _content;
 }
 
+function getRealLength(templateStr) {
+  return templateStr.replace(/(?:@+[\w-]+)+\(((?:.|\n)*?)\)/g, '$1').length;
+}
 
 module.exports.directiveParser = directiveParser;
 module.exports.addDirective = addDirective;
+module.exports.getRealLength = getRealLength;
