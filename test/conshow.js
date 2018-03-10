@@ -9,7 +9,7 @@ describe('conshow', () => {
         clearInterval(timer);
         done();
       }
-      conshow.log(`@i@g( test )\t@progress(${i}) ${i++}/100`, { id: '1' });
+      conshow.log(`@i@g( test )\t@progress(${i}) ${i++}/100\n`, { id: '1' });
     }, 10);
   });
 
@@ -29,7 +29,10 @@ describe('conshow', () => {
   });
 
   it('test a table', () => {
-    conshow.table({ x: 1, y: 2 });
+    conshow.table([{ name: 'Ben', sex: 'male', age: 22 }, { name: 'Mary', sex: 'female', age: 23 }], { id: 'table1' });
+    setTimeout(() => {
+      conshow.tree([{ name: 'Ben', sex: 'male', age: 22 }, { name: 'Mary', sex: 'female', age: 88 }], { id: 'table1' });
+    }, 3000);
   });
 
   it('test a table', () => {
@@ -37,7 +40,7 @@ describe('conshow', () => {
   });
 
   it('test a tree', () => {
-    conshow.tree([['name', 'sex', 'age'], ['Ben', 'male432423', '23'], ['Mary', 'female', '21']]);
+    conshow.tree([{ name: 'Ben', sex: 'male', age: 22 }, { name: 'Mary', sex: 'female', age: 23 }]);
   });
 });
 

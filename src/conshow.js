@@ -12,12 +12,14 @@ const SIGN = {
   DASH: '─',
 };
 
+const conshowBar = `\n\x1b[7;32m # Conshow ${' '.repeat(process.stdout.columns - 11)}\x1b[0m\n\n`;
+
 /**
  * @constructor
  */
 function Conshow() {
-  this.cache = {};
-  this.indexes = [];
+  this.cache = { conshowBar };
+  this.indexes = ['conshowBar'];
   this.id = 0;
   this.isRefreshTask = false;
   this.newLog();
@@ -28,8 +30,9 @@ function Conshow() {
  * turn to next page
  */
 Conshow.prototype.newLog = function () {
-  const blank = '\n\n'.repeat(process.stdout.rows);
-  process.stdout.write(blank);
+  // const blank = '\n\n'.repeat(process.stdout.rows);
+  // process.stdout.write(blank);
+  process.stdout.write('\x1b[s');
 };
 
 
@@ -37,8 +40,8 @@ Conshow.prototype.newLog = function () {
  * clear the console and clear the cache
  */
 Conshow.prototype.clear = function () {
-  this.cache = {};
-  this.indexes = [];
+  this.cache = { conshowBar };
+  this.indexes = ['conshowBar'];
   readline.cursorTo(process.stdout, 0, 0);
   readline.clearScreenDown(process.stdout);
 };
@@ -48,20 +51,23 @@ Conshow.prototype.clear = function () {
  * refresh the cache to console
  */
 Conshow.prototype.refresh = function () {
-  readline.cursorTo(process.stdout, 0, 0);
-  readline.clearScreenDown(process.stdout);
+  // readline.cursorTo(process.stdout, 0, 0);
+  // readline.clearScreenDown(process.stdout);
+  process.stdout.write('\x1b[u');
   const _cache = this.cache;
   this.indexes.forEach((id) => {
     process.stdout.write(_cache[id]);
   });
+  process.stdout.write('\n');
 };
 
 
 /**
- * output the msg without enter('\n')
+ * print a string without '\n'.
  *
  * @param {String} msg
  * @param {String} id
+ *
  * @return {Conshow}
  */
 Conshow.prototype.out = function (msg, option = {}) {
@@ -93,7 +99,6 @@ Conshow.prototype.out = function (msg, option = {}) {
  * @description help delete the log
  * @param {String|Array} ids
  *
- * @api public
  */
 Conshow.prototype.delete = function (ids) {
   if (!/Array/.test(Object.prototype.toString(ids))) {
@@ -111,7 +116,8 @@ Conshow.prototype.delete = function (ids) {
 
 
 /**
- * @description help output a line with '\n'
+ * print a string with '\n'.
+ *
  * @param {String} msg
  * @param {String} id
  */
@@ -152,6 +158,7 @@ Conshow.prototype.table = function (obj, option = {}) {
  *
  * @param {any} tree the jsonObj
  * @param {any} id
+ *
  * @return {Conshow}
  */
 Conshow.prototype.tree = function (jsonObj, option) {
@@ -160,7 +167,7 @@ Conshow.prototype.tree = function (jsonObj, option) {
       if (typeof tree[key] === 'object') {
         return `${last}${' '.repeat(deep * 5)}${SIGN.NODE}${SIGN.DASH.repeat(3)} ${key} \n${parseObject(tree[key], deep + 1)}`;
       }
-      return `${last}${' '.repeat(deep * 5)}${SIGN.NODE}${SIGN.DASH.repeat(3)} ${key}: ${tree[key]}\n`;
+      return `${last}${' '.repeat(deep * 5)}${SIGN.NODE}${SIGN.DASH.repeat(3)} ${key}:\t${tree[key]}\n`;
     }, '');
   }(jsonObj, 0));
   return this.out(msg, option);
